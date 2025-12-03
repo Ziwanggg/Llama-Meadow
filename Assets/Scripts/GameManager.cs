@@ -6,16 +6,25 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    [Header("Win / Lose Settings")]
     public int targetPlants = 5;
     public float timeLimit = 60f;
 
+    [Header("UI")]
     public TextMeshProUGUI messageText;
     public TextMeshProUGUI infoText;
+    public TextMeshProUGUI startText;
+    public TextMeshProUGUI pauseText;
+
+    [Header("Prefabs")]
     public GameObject plantPrefab;
 
     private int grownPlants = 0;
     private float timer;
+
     public bool IsGameOver { get; private set; }
+    public bool GameStarted { get; private set; }
+    public bool IsPaused { get; private set; }
 
     void Awake()
     {
@@ -30,36 +39,95 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         timer = timeLimit;
-        messageText.text = "";
-        UpdateInfoText();
+        IsGameOver = false;
+        GameStarted = false;
+        IsPaused = false;
+
+        if (messageText != null) messageText.text = "";
+        if (infoText != null) UpdateInfoText();
+
+        // show start, hide pause
+        if (startText != null) startText.gameObject.SetActive(true);
+        if (pauseText != null) pauseText.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        if (!IsGameOver)
+        // --- START SCREEN ---
+        if (!GameStarted)
         {
-            timer -= Time.deltaTime;
-            if (timer <= 0f)
+            if (Input.GetKeyDown(KeyCode.Space))
             {
-                timer = 0f;
-                CheckLose();
+                StartGame();
             }
-            UpdateInfoText();
+            return; // do not run timer or anything yet
         }
 
-        if (IsGameOver && Input.GetKeyDown(KeyCode.R))
+        // --- RESTART AFTER GAME OVER ---
+        if (IsGameOver)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            }
+            return;
         }
+
+        // --- PAUSE TOGGLE ---
+        if (Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+
+        if (IsPaused)
+        {
+            return; // freeze timer and growth
+        }
+
+        // --- NORMAL GAME TIMER ---
+        timer -= Time.deltaTime;
+        if (timer <= 0f)
+        {
+            timer = 0f;
+            CheckLose();
+        }
+        UpdateInfoText();
+    }
+
+    void StartGame()
+    {
+        GameStarted = true;
+        if (startText != null)
+        {
+            startText.gameObject.SetActive(false);
+        }
+    }
+
+    void TogglePause()
+    {
+        IsPaused = !IsPaused;
+
+        if (pauseText != null)
+        {
+            pauseText.gameObject.SetActive(IsPaused);
+        }
+
+        // optional: also stop Unity time (not strictly needed)
+        Time.timeScale = IsPaused ? 0f : 1f;
     }
 
     void UpdateInfoText()
     {
-        infoText.text = $"Plants grown: {grownPlants}/{targetPlants}\nTime left: {timer:F1}s";
+        if (infoText != null)
+        {
+            infoText.text = $"Plants grown: {grownPlants}/{targetPlants}\nTime left: {timer:F1}s";
+        }
     }
 
     public void SpawnPlantAt(Plot plot)
     {
+        if (!GameStarted || IsGameOver) return;
+
         Vector3 spawnPos = plot.transform.position;
         GameObject plantObj = Instantiate(plantPrefab, spawnPos, Quaternion.identity);
 
@@ -86,7 +154,12 @@ public class GameManager : MonoBehaviour
     void WinGame()
     {
         IsGameOver = true;
-        messageText.text = "You win! Llama meadow is full.\nPress R to restart.";
+        if (pauseText != null) pauseText.gameObject.SetActive(false);
+        if (messageText != null)
+        {
+            messageText.text = "You win! The llamas are proud.\nPress R to restart.";
+        }
+        Time.timeScale = 1f;
     }
 
     void CheckLose()
@@ -100,6 +173,11 @@ public class GameManager : MonoBehaviour
     void LoseGame()
     {
         IsGameOver = true;
-        messageText.text = "You lose. Not enough plants.\nPress R to restart.";
+        if (pauseText != null) pauseText.gameObject.SetActive(false);
+        if (messageText != null)
+        {
+            messageText.text = "You lose. Not enough plants.\nPress R to restart.";
+        }
+        Time.timeScale = 1f;
     }
 }

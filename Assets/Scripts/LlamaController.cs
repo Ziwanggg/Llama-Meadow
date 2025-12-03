@@ -8,7 +8,9 @@ public class LlamaController : MonoBehaviour
 
     void Update()
     {
-        if (GameManager.Instance.IsGameOver)
+        if (!GameManager.Instance.GameStarted || 
+            GameManager.Instance.IsGameOver || 
+            GameManager.Instance.IsPaused)
         {
             return;
         }
@@ -19,8 +21,7 @@ public class LlamaController : MonoBehaviour
         Vector3 move = new Vector3(x, y, 0f).normalized;
         transform.position += move * moveSpeed * Time.deltaTime;
 
-        // Plant seed on current plot
-        if (Input.GetKeyDown(KeyCode.Space) && currentPlot != null)
+       if (Input.GetKeyDown(KeyCode.Space) && currentPlot != null)
         {
             currentPlot.TryPlant();
         }
@@ -44,3 +45,4 @@ public class LlamaController : MonoBehaviour
         }
     }
 }
+
