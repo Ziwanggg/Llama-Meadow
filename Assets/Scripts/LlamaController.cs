@@ -8,22 +8,35 @@ public class LlamaController : MonoBehaviour
 
     void Update()
     {
-        if (!GameManager.Instance.GameStarted || 
-            GameManager.Instance.IsGameOver || 
+        // ----- Game state checks -----
+        if (!GameManager.Instance.GameStarted ||
+            GameManager.Instance.IsGameOver ||
             GameManager.Instance.IsPaused)
         {
             return;
         }
 
+        // ----- Select plant type -----
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            GameManager.Instance.SelectedPlantType = PlantType.Grass;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            GameManager.Instance.SelectedPlantType = PlantType.Flower;
+        }
+
+        // ----- Movement -----
         float x = Input.GetAxisRaw("Horizontal");
         float y = Input.GetAxisRaw("Vertical");
 
         Vector3 move = new Vector3(x, y, 0f).normalized;
         transform.position += move * moveSpeed * Time.deltaTime;
 
-       if (Input.GetKeyDown(KeyCode.Space) && currentPlot != null)
+        // ----- Plant -----
+        if (Input.GetKeyDown(KeyCode.Space) && currentPlot != null)
         {
-            currentPlot.TryPlant();
+            currentPlot.TryPlant(GameManager.Instance.SelectedPlantType);
         }
     }
 
@@ -45,4 +58,3 @@ public class LlamaController : MonoBehaviour
         }
     }
 }
-

@@ -2,21 +2,22 @@ using UnityEngine;
 
 public class Plant : MonoBehaviour
 {
-    public float growTime = 2f;   // how long until fully grown
+    public float growTime = 2f;
+
     private float timer = 0f;
-
     private bool isGrown = false;
-    private Plot parentPlot;
 
-    // Called when Plant is spawned
-    public void SetParentPlot(Plot plot)
+    private Plot parentPlot;
+    private PlantType plantType;
+
+    public void Init(Plot plot, PlantType type)
     {
         parentPlot = plot;
+        plantType = type;
     }
 
     void Update()
     {
-        // Do nothing if pause/start/game over
         if (!GameManager.Instance.GameStarted ||
             GameManager.Instance.IsPaused ||
             GameManager.Instance.IsGameOver)
@@ -24,11 +25,9 @@ public class Plant : MonoBehaviour
             return;
         }
 
-        // Growing
         if (!isGrown)
         {
             timer += Time.deltaTime;
-
             if (timer >= growTime)
             {
                 BecomeGrown();
@@ -40,19 +39,21 @@ public class Plant : MonoBehaviour
     {
         isGrown = true;
 
-        // Optional: grow visual effect before disappearing
-        transform.localScale = Vector3.one * 1.5f;
+        // reward money
+        int reward = (plantType == PlantType.Flower)
+            ? GameManager.Instance.flowerGrowReward
+            : GameManager.Instance.grassGrowReward;
 
-        // Tell GameManager a plant finished growing
+        GameManager.Instance.AddMoney(reward);
+
         GameManager.Instance.PlantGrew();
 
-        // Tell the plot to change dirt → grass
         if (parentPlot != null)
         {
-            parentPlot.PlantFinished();
+            parentPlot.PlantFinished(plantType);
         }
 
-        // Remove the green circle after growth
         Destroy(gameObject);
     }
+
 }
